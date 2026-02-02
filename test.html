@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LolTroll</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #212121; --tg-theme-text-color: #ffffff;
+            --tg-theme-hint-color: #aaaaaa; --tg-theme-link-color: #8774e1;
+            --tg-theme-button-color: #8774e1; --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #181818;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); margin: 0; padding: 15px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        .page-title { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 30px; }
+        .main-menu-btn { display: block; width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: none; background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 18px; font-weight: 600; text-align: left; cursor: pointer; transition: transform 0.2s ease; }
+        .main-menu-btn:active { transform: scale(0.98); }
+        .btn-back { display: inline-block; margin-bottom: 20px; font-size: 16px; color: var(--tg-theme-link-color); cursor: pointer; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: var(--tg-theme-hint-color); }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--tg-theme-secondary-bg-color); background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 16px; box-sizing: border-box; }
+        textarea { resize: vertical; min-height: 100px;}
+        .btn-primary { width: 100%; padding: 15px; border: none; border-radius: 12px; background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-size: 18px; font-weight: 600; cursor: pointer; }
+        .user-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--tg-theme-secondary-bg-color); border-radius: 8px; margin-top: 5px; }
+        .list-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid var(--tg-theme-secondary-bg-color); }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background-color: #313131; }
+        .list-item.selected { background-color: var(--tg-theme-link-color); }
+        .template-card { background-color: var(--tg-theme-secondary-bg-color); padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        .template-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .template-name { font-size: 18px; font-weight: 600; }
+        .template-text { word-break: break-word; color: var(--tg-theme-hint-color); margin: 10px 0; }
+        .btn-delete { background: none; border: none; color: #ff4d4d; cursor: pointer; }
+        .btn-add { background: none; border: none; color: #40a852; cursor: pointer; }
+        .faq-text a { color: var(--tg-theme-link-color); text-decoration: none;}
+        #loader { text-align: center; margin-top: 50px; font-size: 18px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="loader"><p>Загрузка...</p></div>
+
+    <div id="main-menu" class="page">
+        <h1 class="page-title">LolTroll</h1>
+        <button class="main-menu-btn" onclick="showPage('attack-page')">💥 Начать атаку</button>
+        <button class="main-menu-btn" onclick="showPage('templates-page')">📂 Шаблоны</button>
+        <button class="main-menu-btn" onclick="showPage('faq-page')">❓ FAQ</button>
+    </div>
+
+    <div id="attack-page" class="page">
+        <p class="btn-back" onclick="showPage('main-menu')">← Назад</p>
+        <h1 class="page-title">Начать атаку</h1>
+        <div class="input-group"><label for="user-search">Поиск или ID/@username</label><input type="text" id="user-search" placeholder="Начните вводить для поиска..."></div>
+        <div class="input-group"><label>Выберите цель</label><div id="user-list" class="user-list"></div></div>
+        <div class="input-group"><label for="template-select">Выберите шаблон</label><select id="template-select"></select></div>
+        <div class="input-group"><label for="delay-input">Задержка (0.1 - 2.0 сек)</label><input type="number" id="delay-input" value="0.3" step="0.1" min="0.1" max="2.0"></div>
+        <button id="start-attack-btn" class="btn-primary">Старт!</button>
+    </div>
+
+    <div id="templates-page" class="page">
+        <p class="btn-back" onclick="showPage('main-menu')">← Назад</p>
+        <h1 class="page-title">Шаблоны</h1>
+        <button class="main-menu-btn" onclick="showPage('my-templates-page')">📄 Мои шаблоны</button>
+        <button class="main-menu-btn" onclick="showPage('market-templates-page')">🛒 Маркетплейс</button>
+    </div>
+
+    <div id="my-templates-page" class="page">
+        <p class="btn-back" onclick="showPage('templates-page')">← Назад</p>
+        <h1 class="page-title">Мои шаблоны</h1>
+        <div id="my-templates-list"></div>
+        <button class="btn-primary" onclick="showPage('create-template-page')">Создать новый</button>
+    </div>
+
+    <div id="create-template-page" class="page">
+        <p class="btn-back" onclick="showPage('my-templates-page')">← Отмена</p>
+        <h1 class="page-title">Новый шаблон</h1>
+        <div class="input-group"><label for="template-name-input">Название</label><input type="text" id="template-name-input"></div>
+        <div class="input-group"><label for="template-text-input">Текст (слова через пробел)</label><textarea id="template-text-input"></textarea></div>
+        <button id="save-template-btn" class="btn-primary">Сохранить</button>
+    </div>
+
+    <div id="market-templates-page" class="page">
+        <p class="btn-back" onclick="showPage('templates-page')">← Назад</p>
+        <h1 class="page-title">Маркетплейс</h1>
+        <div id="market-templates-list"></div>
+    </div>
+
+    <div id="faq-page" class="page">
+        <p class="btn-back" onclick="showPage('main-menu')">← Назад</p>
+        <h1 class="page-title">FAQ?</h1>
+        <div class="faq-text"><p><strong>LolTroll</strong> - сервис для троллинга.</p><p>Создатель - <a href="https://t.me/nepravel" target="_blank">nepravel</a></p></div>
+    </div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    let allUsers = [], selectedUserId = null;
+
+    const api = {
+        async request(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const error = await response.json();
+                tg.showAlert(`Ошибка: ${error.detail || 'Неизвестная ошибка'}`);
+                throw new Error(error.detail);
+            }
+            return response.json();
+        },
+        get(url) { return this.request(url); },
+        post(url, data) { return this.request(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); },
+        delete(url) { return this.request(url, { method: 'DELETE' }); }
+    };
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if (pageId === 'attack-page') loadAttackPage();
+        else if (pageId === 'my-templates-page') loadMyTemplates();
+        else if (pageId === 'market-templates-page') loadMarketTemplates();
+    }
+
+    async function loadAttackPage() {
+        try {
+            [allUsers, templates] = await Promise.all([api.get('/api/dialogs'), api.get('/api/templates/my')]);
+            renderUserList(allUsers);
+            document.getElementById('template-select').innerHTML = Object.keys(templates).map(name => `<option value="${name}">${name}</option>`).join('');
+        } catch (e) { document.getElementById('user-list').innerHTML = '<p>Ошибка загрузки.</p>'; }
+    }
+
+    async function loadMyTemplates() {
+        const listDiv = document.getElementById('my-templates-list');
+        listDiv.innerHTML = 'Загрузка...';
+        const templates = await api.get('/api/templates/my');
+        const names = Object.keys(templates);
+        if (names.length === 0) { listDiv.innerHTML = '<p>У вас нет шаблонов.</p>'; return; }
+        listDiv.innerHTML = names.map(name => `
+            <div class="template-card">
+                <div class="template-card-header">
+                    <div class="template-name">${name}</div>
+                    <button class="btn-delete" onclick="deleteTemplate('${name}')">Удалить</button>
+                </div>
+                <div class="template-text">${templates[name]}</div>
+            </div>`).join('');
+    }
+
+    async function loadMarketTemplates() {
+        const listDiv = document.getElementById('market-templates-list');
+        listDiv.innerHTML = 'Загрузка...';
+        const templates = await api.get('/api/templates/market');
+        const names = Object.keys(templates);
+        if (names.length === 0) { listDiv.innerHTML = '<p>Маркетплейс пуст.</p>'; return; }
+        listDiv.innerHTML = names.map(name => `
+            <div class="template-card">
+                <div class="template-card-header">
+                    <div class="template-name">${name}</div>
+                    <button class="btn-add" onclick="addFromMarket('${name}')">Добавить</button>
+                </div>
+                <p style="font-size: 14px; color: var(--tg-theme-hint-color);">Автор: ${templates[name].author}</p>
+                <div class="template-text">${templates[name].text}</div>
+            </div>`).join('');
+    }
+
+    function renderUserList(users) {
+        const listDiv = document.getElementById('user-list');
+        listDiv.innerHTML = users.length === 0 ? '<p>Не найдено.</p>' : users.map(user => `
+            <div class="list-item" data-user-id="${user.id}" data-user-name="${user.name} (${user.username})">
+                <div>${user.name}</div><div style="font-size: 14px; color: var(--tg-theme-hint-color);">${user.username}</div>
+            </div>`).join('');
+        document.querySelectorAll('.list-item').forEach(item => item.addEventListener('click', () => {
+            document.querySelectorAll('.list-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedUserId = item.dataset.userId;
+            document.getElementById('user-search').value = item.dataset.userName;
+        }));
+    }
+
+    document.getElementById('user-search').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        selectedUserId = null; // Сбрасываем выбор при ручном вводе
+        renderUserList(allUsers.filter(u => u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term)));
+    });
+
+    document.getElementById('start-attack-btn').addEventListener('click', async () => {
+        const target = selectedUserId || document.getElementById('user-search').value;
+        const templateName = document.getElementById('template-select').value;
+        const delay = parseFloat(document.getElementById('delay-input').value);
+        if (!target || !templateName) { tg.showAlert('Выберите цель и шаблон.'); return; }
+        tg.showPopup({ title: 'Атака!', message: `Запускаю атаку на ${target}...`, buttons: [{type: 'ok'}]});
+        await api.post('/api/attack', { target_id: target, template_name: templateName, delay });
+        showPage('main-menu');
+    });
+
+    document.getElementById('save-template-btn').addEventListener('click', async () => {
+        const name = document.getElementById('template-name-input').value.trim();
+        const text = document.getElementById('template-text-input').value.trim();
+        if (!name || !text) { tg.showAlert('Название и текст не могут быть пустыми.'); return; }
+        await api.post('/api/templates/my', { name, text });
+        tg.showAlert('Шаблон сохранен!');
+        document.getElementById('template-name-input').value = '';
+        document.getElementById('template-text-input').value = '';
+        showPage('my-templates-page');
+    });
+
+    async function deleteTemplate(name) {
+        tg.showConfirm(`Удалить шаблон "${name}"?`, async (ok) => {
+            if (ok) { await api.delete(`/api/templates/my/${name}`); tg.showAlert('Шаблон удален.'); loadMyTemplates(); }
+        });
+    }
+
+    async function addFromMarket(name) {
+        await api.post('/api/templates/market/add', { name });
+        tg.showAlert(`Шаблон "${name}" добавлен.`);
+    }
+
+    window.addEventListener('load', async () => {
+        try {
+            await api.get('/api/status');
+            document.getElementById('loader').style.display = 'none';
+            showPage('main-menu');
+        } catch (e) {
+            document.getElementById('loader').innerHTML = '<p>Ошибка подключения. Запустите бэкенд и войдите в аккаунт.</p>';
+        }
+    });
+</script>
+</body>
+</html>
