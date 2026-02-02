@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LolTroll</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1E1E1E;
+            --hover-color: #2a2a2a;
+            --text-color: #EAEAEA;
+            --hint-color: #8E8E93;
+            --accent-color: #5E7CE2;
+            --accent-hover: #7894FF;
+            --danger-color: #E25E5E;
+            --success-color: #5EE270;
+            --border-radius-m: 12px;
+            --border-radius-l: 16px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
+        }
+
+        .page { display: none; animation: fadeIn 0.4s ease-out; }
+        .page.active { display: block; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .page-title {
+            font-size: 26px;
+            font-weight: 700;
+            text-align: center;
+            flex-grow: 1;
+        }
+        .main-title { margin-bottom: 25px; }
+
+        .icon-btn {
+            background: none; border: none; padding: 5px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--hint-color);
+        }
+        .icon-btn svg { width: 24px; height: 24px; }
+
+        /* --- Menu --- */
+        .menu-grid { display: grid; gap: 15px; }
+        .menu-card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius-l);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .menu-card:active { transform: scale(0.98); }
+        .menu-card-icon {
+            background-color: color-mix(in srgb, var(--accent-color) 25%, transparent);
+            border-radius: var(--border-radius-m);
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--accent-color);
+        }
+        .menu-card-icon svg { width: 24px; height: 24px; }
+        .menu-card-title { font-size: 17px; font-weight: 600; }
+
+        /* --- Forms --- */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { font-size: 14px; color: var(--hint-color); display: block; margin-bottom: 8px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: var(--border-radius-m);
+            border: 1px solid var(--card-color);
+            background-color: var(--card-color);
+            color: var(--text-color);
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        textarea { resize: vertical; min-height: 120px; }
+        
+        /* --- Buttons --- */
+        .btn {
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; padding: 15px; border: none;
+            border-radius: var(--border-radius-m);
+            font-size: 17px; font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background-color: var(--accent-color); color: #fff; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        
+        /* --- Lists & Cards --- */
+        .scroll-list { max-height: 250px; overflow-y: auto; background-color: var(--card-color); border-radius: var(--border-radius-l); }
+        .list-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 15px; cursor: pointer;
+            border-bottom: 1px solid color-mix(in srgb, var(--bg-color) 50%, var(--card-color));
+            transition: background-color 0.2s ease;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background-color: var(--hover-color); }
+        .list-item.selected { background-color: var(--accent-color); color: #fff; }
+        .list-item.selected .list-item-sub { color: color-mix(in srgb, #fff 70%, transparent); }
+        .list-item-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background-color: var(--accent-color);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600;
+        }
+        .list-item-name { font-weight: 500; }
+        .list-item-sub { font-size: 14px; color: var(--hint-color); }
+
+        .templates-container { display: grid; gap: 10px; }
+        .template-card {
+            background-color: var(--card-color);
+            border-radius: var(--border-radius-l);
+            padding: 15px;
+        }
+        .template-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .template-name { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .template-author { font-size: 13px; color: var(--hint-color); font-weight: 500; margin-bottom: 12px; }
+        .template-text { font-size: 15px; color: var(--hint-color); word-break: break-word; }
+        .template-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .action-btn {
+            flex-grow: 1; padding: 8px 12px; font-size: 14px;
+            font-weight: 500; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            border: 1px solid var(--hover-color);
+            background-color: var(--hover-color);
+            color: var(--text-color); cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover { border-color: var(--accent-color); }
+        .action-btn svg { width: 16px; height: 16px; }
+        .action-btn.publish { color: var(--success-color); border-color: var(--success-color); background: none; }
+        .action-btn.publish:hover { background-color: color-mix(in srgb, var(--success-color) 15%, transparent); }
+        .action-btn.add { color: var(--success-color); }
+        .action-btn.delete { color: var(--danger-color); }
+
+        /* --- Misc --- */
+        .loader-container { padding: 40px; text-align: center; }
+        .loader {
+            width: 24px; height: 24px; border: 3px solid var(--hint-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--hint-color); }
+        .faq-text { line-height: 1.7; font-size: 16px; }
+        .faq-text a { color: var(--accent-color); text-decoration: none; font-weight: 500; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Универсальный Loader -->
+    <div id="loader" class="loader-container hidden"><div class="loader"></div></div>
+
+    <!-- Главное меню -->
+    <div id="main-menu" class="page">
+        <h1 class="page-title main-title">LolTroll</h1>
+        <div class="menu-grid">
+            <div class="menu-card" onclick="showPage('attack-page')">
+                <div class="menu-card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4.58625 18.5139L3.48397 19.6161C2.3123 20.7878 2.3123 22.6562 3.48397 23.8279C4.65565 24.9996 6.52402 24.9996 7.6957 23.8279L8.79798 22.7257L4.58625 18.5139ZM23.4996 3.48425C22.3279 2.31257 20.4595 2.31257 19.2878 3.48425L17.5137 5.25832L21.7254 9.47005L23.4996 7.69598C24.6713 6.52431 24.6713 4.65593 23.4996 3.48425ZM9.84992 21.6737L19.616 11.9077L15.4042 7.69598L5.63821 17.4619L9.84992 21.6737ZM0 24.0002V20.0002L4.05196 15.9482L8.26369 20.1599L4.21173 24.2119C4.19129 24.2323 4.17041 24.2523 4.14923 24.2718L0 24.0002Z"></path></svg>
+                </div>
+                <span class="menu-card-title">Начать атаку</span>
+            </div>
+            <div class="menu-card" onclick="showPage('templates-page')">
+                <div class="menu-card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM7 6V8H17V6H7ZM7 10V12H17V10H7ZM7 14V16H13V14H7Z"></path></svg>
+                </div>
+                <span class="menu-card-title">Шаблоны</span>
+            </div>
+            <div class="menu-card" onclick="showPage('faq-page')">
+                <div class="menu-card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM11 15H13V17H11V15ZM11 7H13V13H11V7Z"></path></svg>
+                </div>
+                <span class="menu-card-title">FAQ</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Страницы второго уровня -->
+    <div id="attack-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('main-menu')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">Начать атаку</h1>
+        </div>
+        <div class="input-group">
+            <label for="user-search">Поиск или ID/@username</label>
+            <input type="text" id="user-search" placeholder="Начните вводить для поиска...">
+        </div>
+        <div class="input-group">
+            <label>Выберите цель</label>
+            <div id="user-list-container"></div>
+        </div>
+        <div class="input-group">
+            <label for="template-select">Выберите шаблон</label>
+            <select id="template-select"></select>
+        </div>
+        <div class="input-group">
+            <label for="delay-input">Задержка (0.1 - 2.0 сек)</label>
+            <input type="number" id="delay-input" value="0.3" step="0.1" min="0.1" max="2.0">
+        </div>
+        <button id="start-attack-btn" class="btn btn-primary">Старт!</button>
+    </div>
+
+    <div id="templates-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('main-menu')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">Шаблоны</h1>
+        </div>
+        <div class="menu-grid">
+            <div class="menu-card" onclick="showPage('my-templates-page')">
+                <div class="menu-card-icon">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 22H4C3.44772 22 3 21.5523 3 21V3C3 2.44772 3.44772 2 4 2H20C20.5523 2 21 2.44772 21 3V21C21 21.5523 20.5523 22 20 22ZM19 20V4H5V20H19Z"></path></svg>
+                </div>
+                <span class="menu-card-title">Мои шаблоны</span>
+            </div>
+            <div class="menu-card" onclick="showPage('market-templates-page')">
+                <div class="menu-card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21 13.3333V15.4C21 18.4947 18.4947 21 15.4 21H8.6C5.50528 21 3 18.4947 3 15.4V8.6C3 5.50528 5.50528 3 8.6 3H10.6667V5H8.6C6.61178 5 5 6.61178 5 8.6V15.4C5 17.3882 6.61178 19 8.6 19H15.4C17.3882 19 19 17.3882 19 15.4V13.3333H21ZM13.3333 3V5H16.8667L8.6 13.2667L10.0667 14.7333L18.3333 6.46667V10H20.3333V3H13.3333Z"></path></svg>
+                </div>
+                <span class="menu-card-title">Маркетплейс</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="my-templates-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('templates-page')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">Мои шаблоны</h1>
+        </div>
+        <div id="my-templates-container"></div>
+        <button class="btn btn-primary" onclick="showPage('create-template-page')">Создать новый</button>
+    </div>
+
+    <div id="market-templates-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('templates-page')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">Маркетплейс</h1>
+        </div>
+        <div id="market-templates-container"></div>
+    </div>
+    
+    <div id="create-template-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('my-templates-page')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">Новый шаблон</h1>
+        </div>
+        <div class="input-group"><label for="template-name-input">Название</label><input type="text" id="template-name-input"></div>
+        <div class="input-group"><label for="template-text-input">Текст (слова через пробел)</label><textarea id="template-text-input"></textarea></div>
+        <button id="save-template-btn" class="btn btn-primary">Сохранить</button>
+    </div>
+
+    <div id="faq-page" class="page">
+        <div class="page-header">
+            <button class="icon-btn" onclick="showPage('main-menu')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.8284 12.0007L15.7782 16.9504L14.364 18.3646L8 12.0007L14.364 5.63672L15.7782 7.05093L10.8284 12.0007Z"></path></svg></button>
+            <h1 class="page-title">FAQ</h1>
+        </div>
+        <div class="faq-text">
+            <p><strong>LolTroll</strong> — сервис для троллинга с удобным управлением.</p>
+            <p>Создатель — <a href="https://t.me/nepravel" target="_blank">nepravel</a></p>
+        </div>
+    </div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.setHeaderColor(getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim());
+    tg.setBackgroundColor(getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim());
+
+    const BACKEND_URL = "http://217.154.161.167:12057";
+    const initData = tg.initData;
+    const loader = document.getElementById('loader');
+
+    let allUsers = [], selectedUserId = null;
+
+    const api = {
+        async post(path, body = {}) {
+            const full_body = { ...body, initData: initData };
+            try {
+                loader.classList.remove('hidden');
+                const response = await fetch(`${BACKEND_URL}${path}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(full_body)
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    tg.showAlert(`Ошибка: ${error.detail || 'Неизвестная ошибка'}`);
+                    throw new Error(error.detail);
+                }
+                return response.json();
+            } catch (e) {
+                tg.showAlert(`Ошибка сети: не удалось подключиться к серверу.`);
+                throw e;
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+    };
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const targetPage = document.getElementById(pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        } else {
+            document.getElementById('main-menu').classList.add('active');
+        }
+
+        switch (pageId) {
+            case 'attack-page': loadAttackPage(); break;
+            case 'my-templates-page': loadMyTemplates(); break;
+            case 'market-templates-page': loadMarketTemplates(); break;
+        }
+    }
+
+    async function loadAttackPage() {
+        const container = document.getElementById('user-list-container');
+        container.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+        try {
+            const [users, templates] = await Promise.all([
+                api.post('/api/dialogs'),
+                api.post('/api/templates/my') // Предполагаем, что этот эндпоинт тоже есть
+            ]);
+            allUsers = users;
+            renderUserList(users);
+            document.getElementById('template-select').innerHTML = Object.keys(templates).map(name => `<option value="${name}">${name}</option>`).join('');
+        } catch (e) {
+            container.innerHTML = '<div class="empty-state">Не удалось загрузить пользователей.</div>';
+        }
+    }
+
+    function renderUserList(users) {
+        const container = document.getElementById('user-list-container');
+        if (users.length === 0) {
+            container.innerHTML = '<div class="empty-state">Нет диалогов.</div>';
+            return;
+        }
+        const listHtml = users.map(user => `
+            <div class="list-item" data-user-id="${user.id}" data-user-name="${user.name} (${user.username})">
+                <div class="list-item-avatar">${user.name.charAt(0)}</div>
+                <div>
+                    <div class="list-item-name">${user.name}</div>
+                    <div class="list-item-sub">${user.username}</div>
+                </div>
+            </div>`).join('');
+        container.innerHTML = `<div class="scroll-list">${listHtml}</div>`;
+        
+        document.querySelectorAll('.list-item').forEach(item => item.addEventListener('click', () => {
+            document.querySelectorAll('.list-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedUserId = item.dataset.userId;
+            document.getElementById('user-search').value = item.dataset.userName;
+        }));
+    }
+
+    document.getElementById('user-search').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        selectedUserId = null;
+        renderUserList(allUsers.filter(u => u.name.toLowerCase().includes(term) || u.username.toLowerCase().includes(term)));
+    });
+
+    async function loadMyTemplates() {
+        const container = document.getElementById('my-templates-container');
+        container.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+        try {
+            const templates = await api.post('/api/templates/my');
+            const names = Object.keys(templates);
+            if (names.length === 0) {
+                container.innerHTML = '<div class="empty-state">У вас еще нет шаблонов.</div>';
+                return;
+            }
+            container.innerHTML = `<div class="templates-container">${names.map(name => `
+                <div class="template-card">
+                    <div class="template-header">
+                        <div class="template-name">${name}</div>
+                    </div>
+                    <div class="template-text">${templates[name]}</div>
+                    <div class="template-actions">
+                        <button class="action-btn publish" onclick="publishTemplate('${name}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.0007 10.8284L14.8291 8.00002L16.2433 9.41423L12.0007 13.6569L7.75797 9.41423L9.17218 8.00002L12.0007 10.8284ZM12.0007 2.00002C17.5235 2.00002 22.0007 6.47717 22.0007 12C22.0007 17.5229 17.5235 22 12.0007 22C6.47785 22 2.00067 17.5229 2.00067 12C2.00067 6.47717 6.47785 2.00002 12.0007 2.00002ZM12.0007 4.00002C7.58235 4.00002 4.00067 7.58172 4.00067 12C4.00067 16.4183 7.58235 20 12.0007 20C16.4191 20 20.0007 16.4183 20.0007 12C20.0007 7.58172 16.4191 4.00002 12.0007 4.00002Z"></path></svg>
+                            Опубликовать
+                        </button>
+                        <button class="action-btn delete" onclick="deleteTemplate('${name}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM9 4V6H15V4H9Z"></path></svg>
+                            Удалить
+                        </button>
+                    </div>
+                </div>`).join('')}</div>`;
+        } catch(e) { container.innerHTML = '<div class="empty-state">Не удалось загрузить шаблоны.</div>'; }
+    }
+
+    async function loadMarketTemplates() {
+        const container = document.getElementById('market-templates-container');
+        container.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+        try {
+            const templates = await api.post('/api/templates/market');
+            const names = Object.keys(templates);
+            if (names.length === 0) {
+                container.innerHTML = '<div class="empty-state">В маркетплейсе пока пусто.</div>';
+                return;
+            }
+            container.innerHTML = `<div class="templates-container">${names.map(name => `
+                <div class="template-card">
+                    <div class="template-header">
+                        <div class="template-name">${name}</div>
+                    </div>
+                    <div class="template-author">Автор: ${templates[name].author}</div>
+                    <div class="template-text">${templates[name].text}</div>
+                    <div class="template-actions">
+                        <button class="action-btn add" onclick="addFromMarket('${name}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z"></path></svg>
+                            Добавить себе
+                        </button>
+                    </div>
+                </div>`).join('')}</div>`;
+        } catch(e) { container.innerHTML = '<div class="empty-state">Не удалось загрузить маркетплейс.</div>'; }
+    }
+    
+    document.getElementById('start-attack-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('start-attack-btn');
+        btn.disabled = true;
+        const target = selectedUserId || document.getElementById('user-search').value;
+        const templateName = document.getElementById('template-select').value;
+        const delay = parseFloat(document.getElementById('delay-input').value);
+        if (!target || !templateName) { tg.showAlert('Выберите цель и шаблон.'); btn.disabled = false; return; }
+        
+        try {
+            await api.post('/api/attack', { target_id: target, template_name: templateName, delay: delay });
+            tg.showPopup({ title: 'Атака!', message: `Запускаю атаку на ${target}...`});
+            showPage('main-menu');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('save-template-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('save-template-btn');
+        btn.disabled = true;
+        const name = document.getElementById('template-name-input').value.trim();
+        const text = document.getElementById('template-text-input').value.trim();
+        if (!name || !text) { tg.showAlert('Название и текст не могут быть пустыми.'); btn.disabled = false; return; }
+        
+        try {
+            await api.post('/api/templates/my/create', { name, text }); // Предполагаем такой эндпоинт
+            tg.showAlert('Шаблон сохранен!');
+            document.getElementById('template-name-input').value = '';
+            document.getElementById('template-text-input').value = '';
+            showPage('my-templates-page');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    async function deleteTemplate(name) {
+        tg.showConfirm(`Вы уверены, что хотите удалить шаблон "${name}"?`, async (confirmed) => {
+            if (confirmed) {
+                await api.post('/api/templates/my/delete', { name });
+                tg.showAlert('Шаблон удален.');
+                loadMyTemplates();
+            }
+        });
+    }
+
+    async function publishTemplate(name) {
+        tg.showConfirm(`Опубликовать шаблон "${name}" в маркетплейс?`, async (confirmed) => {
+            if (confirmed) {
+                const result = await api.post('/api/templates/publish', { name });
+                tg.showAlert(result.message);
+            }
+        });
+    }
+
+    async function addFromMarket(name) {
+        const result = await api.post('/api/templates/market/add', { name });
+        tg.showAlert(result.message);
+    }
+    
+    // Initial page load
+    window.addEventListener('load', () => showPage('main-menu'));
+</script>
+</body>
+</html>
